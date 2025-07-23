@@ -9,7 +9,7 @@ interface ImportMoviesProps {
 
 export default function ImportMovies({ onSuccess }: ImportMoviesProps) {
   const [importMovies] = useImportMoviesMutation()
-  
+
   const handleFileImport = async (e: ChangeEvent<HTMLInputElement>) => {
   const file = e.target.files?.[0]
   if (!file) return

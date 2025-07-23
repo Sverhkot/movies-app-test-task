@@ -3,12 +3,9 @@ import {
   Box,
   List,
   Button,
-  Select,
   Divider,
   ListItem,
-  MenuItem,
   Accordion,
-  TextField,
   IconButton,
   Typography,
   AccordionDetails,
@@ -19,6 +16,8 @@ import DeleteIcon from '@mui/icons-material/Delete'
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown'
 import { useGetMoviesQuery, useDeleteMovieMutation, useAddMovieMutation, useLazyGetMovieQuery, MovieInput } from './apiSlice'
 import ImportMovies from './importMovies'
+import MovieSearchFilters from './MovieSearchFilters';
+import ManualMovieForm from './ManualMovieForm'
 
 export default function MoviesList() {
   const [fetchMovie, { data: selectedMovie, isFetching }] = useLazyGetMovieQuery();
@@ -88,23 +87,12 @@ export default function MoviesList() {
 
   return (
     <Box sx={{ maxWidth: '600px', margin: '0 auto', p: 2 }} bgcolor="#f9f9f9">
-      <h1>Search by: </h1>
-      <Box display="flex" gap={2} mb={3}>
-        <TextField
-          label="Title"
-          value={titleFilter}
-          onChange={(e) => setTitleFilter(e.target.value)}
-          size="small"
-          fullWidth
-        />
-        <TextField
-          label="Actor"
-          value={actorFilter}
-          onChange={(e) => setActorFilter(e.target.value)}
-          size="small"
-          fullWidth
-        />
-      </Box>
+      <MovieSearchFilters
+        titleFilter={titleFilter}
+        actorFilter={actorFilter}
+        onTitleChange={setTitleFilter}
+        onActorChange={setActorFilter}
+      />
 
       <h1>Movies collection</h1>
       <Button
@@ -121,51 +109,20 @@ export default function MoviesList() {
       >
         {showManualForm ? 'Cancel' : 'Create your own movie manually'}
       </Button>
-      <ImportMovies onSuccess={refetch} />
-      {showManualForm && (
-        <Box display="flex" flexDirection="column" gap={2} mb={3}>
-          <TextField
-            label="Title"
-            value={manualMovie.title}
-            onChange={(e) => setManualMovie({ ...manualMovie, title: e.target.value })}
-            fullWidth
-          />
-          <TextField
-            label="Year"
-            value={manualMovie.year}
-            onChange={(e) => setManualMovie({ ...manualMovie, year: e.target.value })}
-            fullWidth
-          />
-          <Select
-            value={manualMovie.format}
-            onChange={(e) => setManualMovie({ ...manualMovie, format: e.target.value as string })}
-            displayEmpty
-            fullWidth
-          >
-            <MenuItem value="" disabled>
-              Select format
-            </MenuItem>
-            <MenuItem value="VHS">VHS</MenuItem>
-            <MenuItem value="DVD">DVD</MenuItem>
-            <MenuItem value="Blu-Ray">Blu-Ray</MenuItem>
-          </Select>
-          <TextField
-            label="Actors (comma separated)"
-            value={manualMovie.actors}
-            onChange={(e) => setManualMovie({ ...manualMovie, actors: e.target.value })}
-            fullWidth
-          />
-          <Button variant="contained" onClick={handleAddManualMovie}>
-            Add Movie
-          </Button>
-        </Box>
-      )}
 
+      {showManualForm && (
+        <ManualMovieForm
+          manualMovie={manualMovie}
+          setManualMovie={setManualMovie}
+          onSubmit={handleAddManualMovie}
+        />
+      )}
       {!movies || movies.length === 0 ? (
-        <>
-          <Typography>The list is empty. Please upload a text file with the films:</Typography>
+        <Box textAlign="center">
+          <Typography>The list is empty.</Typography>
+          <Typography>Add movie manually</Typography>
           <ImportMovies onSuccess={refetch} />
-        </>
+        </Box>
       ) : visibleMovies.length === 0 ? (
         <Typography>No movies found for your search</Typography>
       ) : (
@@ -179,26 +136,28 @@ export default function MoviesList() {
                 if (isExpanded) fetchMovie(Number(movie.id));
               }}
             >
-              <AccordionSummary
-                expandIcon={<ArrowDropDownIcon />}
-                aria-controls={`panel-${movie.id}-content`}
-                id={`panel-${movie.id}-header`}
-              >
-                <Typography component="span" sx={{ flexGrow: 1 }}>
-                  {movie.title}
-                </Typography>
-                <IconButton
-                  edge="end"
-                  aria-label="delete"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    deleteMovie(movie.id);
-                  }}
-                  sx={{ marginLeft: 'auto' }}
+              <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                <AccordionSummary
+                    expandIcon={<ArrowDropDownIcon />}
+                    aria-controls={`panel-${movie.id}-content`}
+                    id={`panel-${movie.id}-header`}
+                    sx={{ flexGrow: 1 }} 
                 >
-                  <DeleteIcon />
+                    <Typography component="span">
+                        {movie.title}
+                    </Typography>
+                </AccordionSummary>
+
+                <IconButton
+                    aria-label="delete"
+                    onClick={() => {
+                        deleteMovie(movie.id);
+                    }}
+                    sx={{ mr: 1 }} 
+                >
+                    <DeleteIcon />
                 </IconButton>
-              </AccordionSummary>
+              </Box>
               <AccordionDetails>
                 {isFetching ? (
                   <CircularProgress />

@@ -24,34 +24,29 @@ export function RegisterForm() {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setEmailError('')
+    const newUser = {
+      email,
+      name: 'Default Name',
+      password,
+      confirmPassword: password,
+    }
 
-    try {
-      const newUser = {
-        email,
-        name: 'Default Name',
-        password,
-        confirmPassword: password,
+    const response = await register(newUser).unwrap()
+
+    dispatch(setCredentials({ token: response.token }))
+    response.token && localStorage.setItem('token', response.token) 
+    setEmail('')
+    setPassword('')
+
+    if(response.error){
+      const fields = response.error.fields
+
+      if (fields['data/email']) {
+        setEmailError('Wrong email')
       }
-
-      const response = await register(newUser).unwrap()
-
-      dispatch(setCredentials({ token: response.token }))
-      localStorage.setItem('token', response.token)
-      setEmail('')
-      setPassword('')
-
-      if(response.error){
-        const fields = response.error.fields
-
-        if (fields['data/email']) {
-          setEmailError('Wrong email')
-        }
-        if (fields['data/password']) {
-          setPasswordError('Wrong password')
-        }
+      if (fields['data/password']) {
+        setPasswordError('Wrong password')
       }
-    } catch (err: any) {
-      console.log(err) 
     }
   }
 
