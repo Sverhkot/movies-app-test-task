@@ -21,14 +21,12 @@ import { useGetMoviesQuery, useDeleteMovieMutation, useAddMovieMutation, useLazy
 import ImportMovies from './importMovies'
 
 export default function MoviesList() {
-  const { data: movies, error, isLoading, refetch } = useGetMoviesQuery()
   const [fetchMovie, { data: selectedMovie, isFetching }] = useLazyGetMovieQuery();
   const [expandedId, setExpandedId] = useState<string | number | null>(null);
   const [deleteMovie] = useDeleteMovieMutation()
   const [addMovie] = useAddMovieMutation()
   const [showManualForm, setShowManualForm] = useState(false)
   const [titleFilter, setTitleFilter] = useState('')
-  const [yearFilter, setYearFilter] = useState('')
   const [actorFilter, setActorFilter] = useState('')
   const [sortAsc, setSortAsc] = useState(true)
   const [manualMovie, setManualMovie] = useState({
@@ -37,25 +35,21 @@ export default function MoviesList() {
     format: '',
     actors: ''
   })
+  const { data: movies, isLoading, error, refetch } = useGetMoviesQuery({
+    title: titleFilter,
+    actor: actorFilter,
+    sort: 'year',
+    order: 'DESC',
+    limit: 100
+  })
 
   if (isLoading) return <p>Loading...</p>
 
-  if (error || !movies) return <p>An error occurred :|</p>
+  if (error) return <p style={{ color: 'red' }}>An error occurred :|</p>;
 
-  const sortedMovies = [...movies].sort((a, b) =>
+  const visibleMovies = [...(movies ?? [])].sort((a, b) =>
     sortAsc ? a.title.localeCompare(b.title) : b.title.localeCompare(a.title)
   )
-
-  const filteredMovies = sortedMovies.filter((movie) => {
-    const titleMatch = movie.title.toLowerCase().includes(titleFilter.toLowerCase())
-    const yearMatch = yearFilter === '' || movie.year === Number(yearFilter)
-    const actorMatch =
-      actorFilter === '' ||
-      movie.actors?.some((actor) =>
-        actor.name.toLowerCase().includes(actorFilter.toLowerCase())
-      )
-    return titleMatch && yearMatch && actorMatch
-  })
 
   const handleAddManualMovie = async () => {
     if (!manualMovie.title || !manualMovie.year || !manualMovie.format) {
@@ -100,13 +94,6 @@ export default function MoviesList() {
           label="Title"
           value={titleFilter}
           onChange={(e) => setTitleFilter(e.target.value)}
-          size="small"
-          fullWidth
-        />
-        <TextField
-          label="Year"
-          value={yearFilter}
-          onChange={(e) => setYearFilter(e.target.value)}
           size="small"
           fullWidth
         />
@@ -174,16 +161,16 @@ export default function MoviesList() {
         </Box>
       )}
 
-      {movies.length === 0 ? (
+      {!movies || movies.length === 0 ? (
         <>
           <Typography>The list is empty. Please upload a text file with the films:</Typography>
           <ImportMovies onSuccess={refetch} />
         </>
-      ) : filteredMovies.length === 0 ? (
+      ) : visibleMovies.length === 0 ? (
         <Typography>No movies found for your search</Typography>
       ) : (
         <List>
-          {filteredMovies.map((movie) => (
+          {visibleMovies.map((movie) => (
             <Accordion
               key={movie.id}
               expanded={expandedId === movie.id}
@@ -224,7 +211,7 @@ export default function MoviesList() {
                     <Divider variant="middle" component="li" />
                     <ListItem>
                       Actors: {selectedMovie.actors && selectedMovie.actors.length > 0 
-                        ? selectedMovie.actors.map(actor => actor.name).join(', ') 
+                        ? selectedMovie.actors?.map(actor => actor.name).join(', ') 
                         : 'N/A'}
                     </ListItem>
                   </List>

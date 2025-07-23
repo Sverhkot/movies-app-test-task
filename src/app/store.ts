@@ -1,14 +1,18 @@
 import { configureStore } from '@reduxjs/toolkit'
-import { moviesApi } from '../features/movies/apiSlice'
 import authReducer from '../features/auth/authSlice'
+import { moviesApi } from '../features/movies/apiSlice'
+import { authApi } from '../features/auth/authApi'
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
+    [authApi.reducerPath]: authApi.reducer,
     [moviesApi.reducerPath]: moviesApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(moviesApi.middleware),
+    getDefaultMiddleware()
+      .concat(authApi.middleware)
+      .concat(moviesApi.middleware),
 })
 
 export type RootState = ReturnType<typeof store.getState>
