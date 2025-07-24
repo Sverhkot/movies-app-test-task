@@ -1,6 +1,7 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react"
+import { CONFIG } from "../../config"
 
-export interface RegisterRequest {
+export type RegisterRequest = {
   email: string
   name?: string
   password?: string
@@ -8,7 +9,7 @@ export interface RegisterRequest {
 }
 
 
-export interface RegisterResponse {
+export type RegisterResponse = {
   token: string
   user: { id: number; email: string; name: string }
   error?: {code: string; fields: {'data/email': string, 'data/password': string}}
@@ -16,7 +17,15 @@ export interface RegisterResponse {
 
 export const authApi = createApi({
   reducerPath: 'authApi',
-  baseQuery: fetchBaseQuery({ baseUrl: 'http://192.168.1.219:8000/api/v1/' }),
+  baseQuery: fetchBaseQuery({ 
+    baseUrl: (() => {
+      const apiUrl = CONFIG.API_URL;
+      if (!apiUrl) {
+        throw new Error('API_URL configuration is required but not provided');
+      }
+      return apiUrl;
+    })()
+  }),
   endpoints: (builder) => ({
     register: builder.mutation<RegisterResponse, RegisterRequest>({
       query: (newUser) => ({

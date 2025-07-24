@@ -1,4 +1,5 @@
-import { FormEvent, useState } from 'react'
+import type { FormEvent} from 'react';
+import { useState } from 'react'
 
 import {
   Box,
@@ -10,18 +11,18 @@ import {
 } from '@mui/material'
 
 import { useRegisterMutation } from './authApi'
-import { useDispatch } from 'react-redux'
+import { useAppDispatch } from '../../app/hooks'
 import { setCredentials } from './authSlice'
 
 export function RegisterForm() {
-  const dispatch = useDispatch()
+  const dispatch = useAppDispatch()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [emailError, setEmailError] = useState('')
   const [passwordError, setPasswordError] = useState('')
   const [register, { isLoading }] = useRegisterMutation()
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setEmailError('')
     const newUser = {
@@ -31,23 +32,27 @@ export function RegisterForm() {
       confirmPassword: password,
     }
 
-    const response = await register(newUser).unwrap()
+    register(newUser).unwrap()
+      .then((response) => {
+        dispatch(setCredentials({ token: response.token }))
+        if (response.token) {
+          localStorage.setItem('token', response.token)
+        }
+        setEmail('')
+        setPassword('')
+      })
+      .catch((error: unknown) => {
+        if (error && typeof error === 'object' && 'fields' in error) {
+          const fields = (error as { fields: Record<string, Record<string, string>> }).fields;
 
-    dispatch(setCredentials({ token: response.token }))
-    response.token && localStorage.setItem('token', response.token) 
-    setEmail('')
-    setPassword('')
-
-    if(response.error){
-      const fields = response.error.fields
-
-      if (fields['data/email']) {
-        setEmailError('Wrong email')
-      }
-      if (fields['data/password']) {
-        setPasswordError('Wrong password')
-      }
-    }
+          if ('data/email' in fields) {
+            setEmailError('Wrong email')
+          }
+          if ('data/password' in fields) {
+            setPasswordError('Wrong password')
+          }
+        }
+      })
   }
 
   return (

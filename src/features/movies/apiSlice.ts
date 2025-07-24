@@ -1,14 +1,15 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
-import { RootState } from '../../app/store'
+import type { RootState } from '../../app/store'
+import { CONFIG } from '../../config'
 
-export interface Actor {
+export type Actor = {
   id: number
   name: string
   createdAt: string
   updatedAt: string
 }
 
-export interface Movie {
+export type Movie = {
   id: string
   title: string
   year: number
@@ -18,7 +19,7 @@ export interface Movie {
   updatedAt: string
 }
 
-export interface MovieInput {
+export type MovieInput = {
   title: string
   year: number
   format: 'VHS' | 'DVD' | 'Blu-Ray'
@@ -36,7 +37,13 @@ type MovieFilters = {
 
 export const moviesApi = createApi({
   baseQuery: fetchBaseQuery({
-    baseUrl: 'http://192.168.1.219:8000/api/v1/',
+    baseUrl: (() => {
+      const apiUrl = CONFIG.API_URL;
+      if (!apiUrl) {
+        throw new Error('API_URL configuration is required but not provided');
+      }
+      return apiUrl;
+    })(),
     prepareHeaders: (headers, { getState }) => {
       const token = (getState() as RootState).auth.token
       if (token) {
@@ -48,12 +55,12 @@ export const moviesApi = createApi({
   tagTypes: ['Movie'],
   endpoints: (builder) => ({
     getMovie: builder.query<Movie, number>({
-      query: (id) => `movies/${id}`,
+      query: (id) => `movies/${String(id)}`,
       transformResponse: (response: { data: Movie }) => response.data,
     }),
     getMovies: builder.query<Movie[], MovieFilters>({
       query: ({ title, actor, sort = 'year', order = 'DESC', limit = 1000 }) => {
-        const params: Record<string, any> = {
+        const params: Record<string, string | number> = {
           sort,
           order,
           limit,
@@ -79,14 +86,14 @@ export const moviesApi = createApi({
       }),
       invalidatesTags: ['Movie'], 
     }),
-    deleteMovie: builder.mutation<void, string>({
+    deleteMovie: builder.mutation<unknown, string>({
       query: (id) => ({
         url: `movies/${id}`,
         method: 'DELETE',
       }),
       invalidatesTags: ['Movie'],
     }),
-    importMovies: builder.mutation<void, FormData>({
+    importMovies: builder.mutation<unknown, FormData>({
       query: (formData) => ({
         url: 'movies/import',
         method: 'POST',

@@ -1,4 +1,4 @@
-import React from 'react'
+import type React from 'react'
 import { TextField, Button, Box, Select, MenuItem } from '@mui/material'
 
 type ManualMovieFormProps = {
@@ -43,7 +43,7 @@ export default function ManualMovieForm({
       />
       <Select
         value={manualMovie.format}
-        onChange={(e) => setManualMovie({ ...manualMovie, format: e.target.value })}
+        onChange={(e) => { setManualMovie({ ...manualMovie, format: e.target.value }); }}
         displayEmpty
         fullWidth
       >

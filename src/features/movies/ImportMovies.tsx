@@ -1,28 +1,29 @@
-import { ChangeEvent } from 'react'
+import type { ChangeEvent } from 'react'
 import { Box, Typography, IconButton } from '@mui/material'
 import UploadFileIcon from '@mui/icons-material/UploadFile'
 import { useImportMoviesMutation } from './apiSlice'
 
-interface ImportMoviesProps {
-  onSuccess?: () => void
+type ImportMoviesProps = {
+  onSuccess?: () => Promise<unknown>
 }
 
 export default function ImportMovies({ onSuccess }: ImportMoviesProps) {
   const [importMovies] = useImportMoviesMutation()
 
-  const handleFileImport = async (e: ChangeEvent<HTMLInputElement>) => {
+  const handleFileImport = (e: ChangeEvent<HTMLInputElement>) => {
   const file = e.target.files?.[0]
   if (!file) return
 
   const formData = new FormData()
   formData.append('movies', file)
 
-  try {
-    await importMovies(formData).unwrap()
-    onSuccess?.()
-  } catch (err) {
-    console.error('Failed to import file:', err)
-  }
+  importMovies(formData).unwrap()
+    .then(() => {
+      void onSuccess?.()
+    })
+    .catch((err: unknown) => {
+      console.error('Failed to import file:', err)
+    })
 }
 
   return (

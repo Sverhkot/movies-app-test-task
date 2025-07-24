@@ -14,8 +14,9 @@ import {
 } from '@mui/material'
 import DeleteIcon from '@mui/icons-material/Delete'
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown'
-import { useGetMoviesQuery, useDeleteMovieMutation, useAddMovieMutation, useLazyGetMovieQuery, MovieInput } from './apiSlice'
-import ImportMovies from './importMovies'
+import type { MovieInput } from './apiSlice';
+import { useGetMoviesQuery, useDeleteMovieMutation, useAddMovieMutation, useLazyGetMovieQuery } from './apiSlice'
+import ImportMovies from './ImportMovies'
 import MovieSearchFilters from './MovieSearchFilters';
 import ManualMovieForm from './ManualMovieForm'
 
@@ -50,39 +51,39 @@ export default function MoviesList() {
     sortAsc ? a.title.localeCompare(b.title) : b.title.localeCompare(a.title)
   )
 
-  const handleAddManualMovie = async () => {
+  const handleAddManualMovie = () => {
     if (!manualMovie.title || !manualMovie.year || !manualMovie.format) {
       console.error('Please fill in all required fields');
       return;
     }
 
-    try {
-      const capitalizeName = (name: string) => {
-        return name
-          .split(' ')
-          .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
-          .join(' ');
-      };
+    const capitalizeName = (name: string) => {
+      return name
+        .split(' ')
+        .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+        .join(' ');
+    };
 
-      const newMovie: MovieInput = {
-        title: manualMovie.title.trim(),
-        year: Number(manualMovie.year),
-        format: manualMovie.format as 'VHS' | 'DVD' | 'Blu-Ray',
-        actors: manualMovie.actors
-          .split(',')
-          .map(s => s.trim())
-          .filter(s => s.length > 0)
-          .map(capitalizeName),
-      };
+    const newMovie: MovieInput = {
+      title: manualMovie.title.trim(),
+      year: Number(manualMovie.year),
+      format: manualMovie.format as 'VHS' | 'DVD' | 'Blu-Ray',
+      actors: manualMovie.actors
+        .split(',')
+        .map(s => s.trim())
+        .filter(s => s.length > 0)
+        .map(capitalizeName),
+    };
 
-      await addMovie(newMovie).unwrap()
-      await refetch()
-
-      setManualMovie({ title: '', year: '', format: '', actors: '' })
-      setShowManualForm(false)
-    } catch (error) {
-      console.error('Failed to add movie:', error)
-    }
+    void addMovie(newMovie).unwrap()
+      .then(() => refetch())
+      .then(() => {
+        setManualMovie({ title: '', year: '', format: '', actors: '' })
+        setShowManualForm(false)
+      })
+      .catch((error: unknown) => {
+        console.error('Failed to add movie:', error)
+      })
   }
 
   return (
@@ -98,13 +99,13 @@ export default function MoviesList() {
       <Button
         variant="outlined"
         sx={{ mb: 2 }}
-        onClick={() => setSortAsc((prev) => !prev)}
+        onClick={() => { setSortAsc((prev) => !prev); }}
       >
         Sort by title: {sortAsc ? 'A → Z' : 'Z → A'}
       </Button>
       <Button
         variant="outlined"
-        onClick={() => setShowManualForm((prev) => !prev)}
+        onClick={() => { setShowManualForm((prev) => !prev); }}
         sx={{ mb: 2 }}
       >
         {showManualForm ? 'Cancel' : 'Create your own movie manually'}
@@ -114,7 +115,7 @@ export default function MoviesList() {
         <ManualMovieForm
           manualMovie={manualMovie}
           setManualMovie={setManualMovie}
-          onSubmit={handleAddManualMovie}
+          onSubmit={() => { handleAddManualMovie(); }}
         />
       )}
       {!movies || movies.length === 0 ? (
@@ -133,29 +134,31 @@ export default function MoviesList() {
               expanded={expandedId === movie.id}
               onChange={(_, isExpanded) => {
                 setExpandedId(isExpanded ? movie.id : null);
-                if (isExpanded) fetchMovie(Number(movie.id));
+                if (isExpanded) { fetchMovie(Number(movie.id)).catch(() => { console.error('Failed to fetch movie details'); }); }
               }}
             >
               <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
                 <AccordionSummary
-                    expandIcon={<ArrowDropDownIcon />}
-                    aria-controls={`panel-${movie.id}-content`}
-                    id={`panel-${movie.id}-header`}
-                    sx={{ flexGrow: 1 }} 
+                  expandIcon={<ArrowDropDownIcon />}
+                  aria-controls={`panel-${movie.id}-content`}
+                  id={`panel-${movie.id}-header`}
+                  sx={{ flexGrow: 1 }}
                 >
-                    <Typography component="span">
-                        {movie.title}
-                    </Typography>
+                  <Typography component="span">
+                    {movie.title}
+                  </Typography>
                 </AccordionSummary>
 
                 <IconButton
-                    aria-label="delete"
-                    onClick={() => {
-                        deleteMovie(movie.id);
-                    }}
-                    sx={{ mr: 1 }} 
+                  aria-label="delete"
+                  onClick={() => {
+                    deleteMovie(movie.id).unwrap()
+                      .then(() => refetch())
+                      .catch((err: unknown) => { console.error('Failed to delete movie:', err); });
+                  }}
+                  sx={{ mr: 1 }}
                 >
-                    <DeleteIcon />
+                  <DeleteIcon />
                 </IconButton>
               </Box>
               <AccordionDetails>
@@ -169,8 +172,8 @@ export default function MoviesList() {
                     <ListItem>Format: {movie.format}</ListItem>
                     <Divider variant="middle" component="li" />
                     <ListItem>
-                      Actors: {selectedMovie.actors && selectedMovie.actors.length > 0 
-                        ? selectedMovie.actors?.map(actor => actor.name).join(', ') 
+                      Actors: {selectedMovie.actors.length > 0
+                        ? selectedMovie.actors.map(actor => actor.name).join(', ')
                         : 'N/A'}
                     </ListItem>
                   </List>

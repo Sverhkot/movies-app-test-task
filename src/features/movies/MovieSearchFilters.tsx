@@ -1,6 +1,6 @@
 import { Box, TextField } from '@mui/material';
 
-interface MovieSearchFiltersProps {
+type MovieSearchFiltersProps = {
   titleFilter: string;
   actorFilter: string;
   onTitleChange: (value: string) => void;
@@ -20,14 +20,14 @@ export default function MovieSearchFilters({
         <TextField
           label="Title"
           value={titleFilter}
-          onChange={(e) => onTitleChange(e.target.value)}
+          onChange={(e) => { onTitleChange(e.target.value); }}
           size="small"
           fullWidth
         />
         <TextField
           label="Actor"
           value={actorFilter}
-          onChange={(e) => onActorChange(e.target.value)}
+          onChange={(e) => { onActorChange(e.target.value); }}
           size="small"
           fullWidth
         />
