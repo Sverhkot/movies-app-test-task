@@ -1,27 +1,96 @@
-# vite-template-redux
+# Movies Test Task App
 
-Uses [Vite](https://vitejs.dev/), [Vitest](https://vitest.dev/), and [React Testing Library](https://github.com/testing-library/react-testing-library) to create a modern [React](https://react.dev/) app compatible with [Create React App](https://create-react-app.dev/)
+A modern React application for managing your movie collection. Built with Vite, Redux Toolkit, TypeScript, and Material-UI.
 
-```sh
-npx tiged reduxjs/redux-templates/packages/vite-template-redux my-app
+## Features
+
+- 🎬 Add movies manually or import from files
+- 🔍 Search and filter by title or actor
+- 📱 Responsive design with Material-UI
+- 🔐 User authentication
+- 🐳 Docker ready for easy deployment
+
+## Quick Start with Docker
+
+The easiest way to run this app is using Docker. The image is available on Docker Hub:
+
+```bash
+# Pull and run the latest version
+docker run --name movies-app \
+  -p 3000:3000 \
+  -e API_URL=http://your-api-server:8000/api/v1 \
+  sverhkot/movies:latest
 ```
 
-## Goals
+The app will be available at `http://localhost:3000`
 
-- Easy migration from Create React App or Vite
-- As beginner friendly as Create React App
-- Optimized performance compared to Create React App
-- Customizable without ejecting
+## Running Without Docker
+
+### Prerequisites
+
+- Node.js 18+ 
+- npm
+
+### Installation & Setup
+
+```bash
+# Clone the repository
+git clone <your-repo-url>
+cd movies-app
+
+# Install dependencies
+npm install
+
+# Create the runtime configuration file
+echo 'window.__APP_CONFIG__ = { API_URL: "http://localhost:8000/api/v1" };' > public/env.js
+
+# Start development server
+npm run dev
+```
+
+The development server will start at `http://localhost:5173`
+
+### Configuring API_URL for Local Development
+
+Since the app uses runtime configuration, you need to create the `public/env.js` file manually:
+
+```bash
+# For local backend on port 8000
+echo 'window.__APP_CONFIG__ = { API_URL: "http://localhost:8000/api/v1" };' > public/env.js
+
+# For custom API server
+echo 'window.__APP_CONFIG__ = { API_URL: "https://your-api-domain.com/api/v1" };' > public/env.js
+```
+
+**Important**: The `public/env.js` file is git-ignored, so each developer needs to create it locally.
+
+## Building Docker Image
+
+To build your own Docker image:
+
+```bash
+# Build the image
+docker build -t your-username/movies:latest .
+
+# Run your custom build
+docker run --name movies-app \
+  -p 3000:3000 \
+  -e API_URL=http://your-api-server:8000/api/v1 \
+  your-username/movies:latest
+```
 
 ## Scripts
 
-- `dev`/`start` - start dev server and open browser
+- `dev`/`start` - start dev server
 - `build` - build for production
 - `preview` - locally preview production build
 - `test` - launch test runner
+- `lint` - run ESLint
 
-## Inspiration
+## Tech Stack
 
-- [Create React App](https://github.com/facebook/create-react-app/tree/main/packages/cra-template)
-- [Vite](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react)
-- [Vitest](https://github.com/vitest-dev/vitest/tree/main/examples/react-testing-lib)
+- **Frontend**: React 18, TypeScript, Vite
+- **State Management**: Redux Toolkit, RTK Query
+- **UI**: Material-UI (MUI)
+- **Build**: Vite
+- **Deployment**: Docker, Node.js with serve
