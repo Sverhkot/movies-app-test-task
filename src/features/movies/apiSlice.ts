@@ -38,11 +38,11 @@ type MovieFilters = {
 export const moviesApi = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: (() => {
-      const apiUrl = CONFIG.API_URL;
+      const apiUrl = CONFIG.API_URL
       if (!apiUrl) {
-        throw new Error('API_URL configuration is required but not provided');
+        throw new Error('API_URL configuration is required but not provided')
       }
-      return apiUrl;
+      return apiUrl
     })(),
     prepareHeaders: (headers, { getState }) => {
       const token = (getState() as RootState).auth.token

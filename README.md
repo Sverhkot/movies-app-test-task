@@ -42,7 +42,7 @@ cd movies-app
 npm install
 
 # Create the runtime configuration file
-echo 'window.__APP_CONFIG__ = { API_URL: "http://localhost:8000/api/v1" };' > public/env.js
+echo 'window.__APP_CONFIG__ = { API_URL: "http://localhost:8000/api/v1" };' > dist/env.js
 
 # Start development server
 npm run dev
@@ -52,17 +52,17 @@ The development server will start at `http://localhost:5173`
 
 ### Configuring API_URL for Local Development
 
-Since the app uses runtime configuration, you need to create the `public/env.js` file manually:
+Since the app uses runtime configuration, you need to create the `dist/env.js` file manually:
 
 ```bash
 # For local backend on port 8000
-echo 'window.__APP_CONFIG__ = { API_URL: "http://localhost:8000/api/v1" };' > public/env.js
+echo 'window.__APP_CONFIG__ = { API_URL: "http://localhost:8000/api/v1" };' > dist/env.js
 
 # For custom API server
-echo 'window.__APP_CONFIG__ = { API_URL: "https://your-api-domain.com/api/v1" };' > public/env.js
+echo 'window.__APP_CONFIG__ = { API_URL: "https://your-api-domain.com/api/v1" };' > dist/env.js
 ```
 
-**Important**: The `public/env.js` file is git-ignored, so each developer needs to create it locally.
+**Important**: The `dist/env.js` file is git-ignored, so each developer needs to create it locally.
 
 ## Building Docker Image
 

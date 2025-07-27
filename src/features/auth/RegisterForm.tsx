@@ -1,4 +1,4 @@
-import type { FormEvent} from 'react';
+import type { FormEvent} from 'react'
 import { useState } from 'react'
 
 import {
@@ -10,9 +10,9 @@ import {
   CircularProgress,
 } from '@mui/material'
 
-import { useRegisterMutation } from './authApi'
 import { useAppDispatch } from '../../app/hooks'
 import { setCredentials } from './authSlice'
+import { useRegisterMutation } from './authApi'
 
 export function RegisterForm() {
   const dispatch = useAppDispatch()
@@ -43,7 +43,7 @@ export function RegisterForm() {
       })
       .catch((error: unknown) => {
         if (error && typeof error === 'object' && 'fields' in error) {
-          const fields = (error as { fields: Record<string, Record<string, string>> }).fields;
+          const fields = (error as { fields: Record<string, Record<string, string>> }).fields
 
           if ('data/email' in fields) {
             setEmailError('Wrong email')
@@ -56,50 +56,58 @@ export function RegisterForm() {
   }
 
   return (
-    <Paper elevation={3} sx={{ maxWidth: 400, mx: 'auto', mt: 6, p: 4 }}>
+    <Paper 
+      elevation={3} 
+      sx={{ maxWidth: 400, mx: 'auto', mt: 6, p: 4 }}
+    >
       <Typography variant="h5" align="center" gutterBottom>
         Registration Form
       </Typography>
 
       <Box
+        sx={{ 
+          gap: 2,
+          display: 'flex', 
+          flexDirection: 'column'
+        }}
+        noValidate
         component="form"
         onSubmit={handleSubmit}
-        noValidate
-        sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
       >
         <TextField
-          label="Email"
-          type="email"
-          value={email}
-          onChange={e => {
-            setEmail(e.target.value)
-            if (emailError) setEmailError('')
-          }}
           required
+          type="email"
+          label="Email"
+          value={email}
           fullWidth
           autoFocus
           error={!!emailError}
           helperText={emailError}
+          onChange={e => {
+            setEmail(e.target.value)
+            if (emailError) setEmailError('')
+          }}
         />
 
         <TextField
+          required
           label="Password"
           type="password"
           value={password}
+          fullWidth
+          error={!!passwordError}
+          helperText={passwordError}
           onChange={e => {
             setPassword(e.target.value)
             if (passwordError) setPasswordError('')
           }}
-          required
-          fullWidth
-          error={!!passwordError}
-          helperText={passwordError}
+
         />
 
         <Button
           type="submit"
-          variant="contained"
           color="primary"
+          variant="contained"
           disabled={isLoading}
         >
           {isLoading ? <CircularProgress size={24} /> : 'Register'}

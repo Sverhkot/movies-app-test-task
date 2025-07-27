@@ -1,25 +1,50 @@
-import type { ChangeEvent } from 'react'
-import { Box, Typography, IconButton } from '@mui/material'
-import UploadFileIcon from '@mui/icons-material/UploadFile'
+import { useState, type ChangeEvent } from 'react'
+
+import { styled } from '@mui/material/styles'
+import { Box, Button } from '@mui/material'
+import CloudUploadIcon from '@mui/icons-material/CloudUpload'
+
 import { useImportMoviesMutation } from './apiSlice'
 
 type ImportMoviesProps = {
   onSuccess?: () => Promise<unknown>
+  onError?: () => Promise<unknown>
 }
 
-export default function ImportMovies({ onSuccess }: ImportMoviesProps) {
+const VisuallyHiddenInput = styled('input')({
+  clip: 'rect(0 0 0 0)',
+  clipPath: 'inset(50%)',
+  height: 1,
+  overflow: 'hidden',
+  position: 'absolute',
+  bottom: 0,
+  left: 0,
+  whiteSpace: 'nowrap',
+  width: 1,
+});
+
+export default function ImportMovies({ onSuccess, onError }: ImportMoviesProps) {
   const [importMovies] = useImportMoviesMutation()
+  const [, setErrorMessage] = useState('')
 
   const handleFileImport = (e: ChangeEvent<HTMLInputElement>) => {
   const file = e.target.files?.[0]
+  setErrorMessage('')
+
   if (!file) return
 
+  
   const formData = new FormData()
   formData.append('movies', file)
-
+  
   importMovies(formData).unwrap()
-    .then(() => {
-      void onSuccess?.()
+  .then(() => {
+    if (file.size === 0) {
+      setErrorMessage('The file is empty.')
+      void onError?.()
+      return
+    }
+    void onSuccess?.()
     })
     .catch((err: unknown) => {
       console.error('Failed to import file:', err)
@@ -27,22 +52,23 @@ export default function ImportMovies({ onSuccess }: ImportMoviesProps) {
 }
 
   return (
+    <>
     <Box textAlign="center" mt={2} mb={4}>
-      <Typography variant="body1" gutterBottom>
-        Or upload a text file with your movie collection:
-      </Typography>
-      <label htmlFor="file-upload">
-        <input
-          id="file-upload"
-          type="file"
-          accept=".txt"
-          style={{ display: 'none' }}
-          onChange={handleFileImport}
-        />
-        <IconButton component="span" color="primary" size="large">
-          <UploadFileIcon fontSize="large" />
-        </IconButton>
-      </label>
-    </Box>
+        <Button
+          component="label"
+          role={undefined}
+          variant="contained"
+          tabIndex={-1}
+          startIcon={<CloudUploadIcon />}
+        >
+          Upload files
+          <VisuallyHiddenInput
+            type="file"
+            onChange={handleFileImport}
+            multiple
+          />
+        </Button>
+      </Box>
+    </>
   )
 }

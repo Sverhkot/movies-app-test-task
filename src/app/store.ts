@@ -1,4 +1,5 @@
 import { configureStore } from '@reduxjs/toolkit'
+
 import authReducer from '../features/auth/authSlice'
 import { moviesApi } from '../features/movies/apiSlice'
 import { authApi } from '../features/auth/authApi'

@@ -1,41 +1,45 @@
 import { useState } from 'react'
+
 import {
   Box,
   List,
+  Alert,
   Button,
   Divider,
+  Snackbar,
   ListItem,
   Accordion,
-  IconButton,
   Typography,
   AccordionDetails,
   AccordionSummary,
   CircularProgress
 } from '@mui/material'
-import DeleteIcon from '@mui/icons-material/Delete'
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown'
-import type { MovieInput } from './apiSlice';
-import { useGetMoviesQuery, useDeleteMovieMutation, useAddMovieMutation, useLazyGetMovieQuery } from './apiSlice'
+
+import type { MovieInput } from './apiSlice'
 import ImportMovies from './ImportMovies'
-import MovieSearchFilters from './MovieSearchFilters';
 import ManualMovieForm from './ManualMovieForm'
+import DeleteMovieDialog from './DeleteMovieDialog'
+import MovieSearchFilters from './MovieSearchFilters'
+import { useGetMoviesQuery, useAddMovieMutation, useLazyGetMovieQuery } from './apiSlice'
 
 export default function MoviesList() {
-  const [fetchMovie, { data: selectedMovie, isFetching }] = useLazyGetMovieQuery();
-  const [expandedId, setExpandedId] = useState<string | number | null>(null);
-  const [deleteMovie] = useDeleteMovieMutation()
   const [addMovie] = useAddMovieMutation()
-  const [showManualForm, setShowManualForm] = useState(false)
+  const [sortAsc, setSortAsc] = useState(true)
   const [titleFilter, setTitleFilter] = useState('')
   const [actorFilter, setActorFilter] = useState('')
-  const [sortAsc, setSortAsc] = useState(true)
+  const [showManualForm, setShowManualForm] = useState(false)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [expandedId, setExpandedId] = useState<string | number | null>(null)
+  const [fetchMovie, { data: selectedMovie, isFetching }] = useLazyGetMovieQuery()
   const [manualMovie, setManualMovie] = useState({
     title: '',
     year: '',
     format: '',
     actors: ''
   })
-  const { data: movies, isLoading, error, refetch } = useGetMoviesQuery({
+  const { data: movies, error, refetch } = useGetMoviesQuery({
     title: titleFilter,
     actor: actorFilter,
     sort: 'year',
@@ -43,26 +47,29 @@ export default function MoviesList() {
     limit: 100
   })
 
-  if (isLoading) return <p>Loading...</p>
-
-  if (error) return <p style={{ color: 'red' }}>An error occurred :|</p>;
+  if (error) return <p style={{ color: 'red' }}>An error occurred :|</p>
 
   const visibleMovies = [...(movies ?? [])].sort((a, b) =>
     sortAsc ? a.title.localeCompare(b.title) : b.title.localeCompare(a.title)
   )
 
-  const handleAddManualMovie = () => {
+  const handleDeleteSuccess = async () => {
+    setSuccessMessage('Movie deleted successfully')
+    await refetch()
+  }
+
+  const handleAddManualMovie = async () => {
     if (!manualMovie.title || !manualMovie.year || !manualMovie.format) {
-      console.error('Please fill in all required fields');
-      return;
+      console.error('Please fill in all required fields')
+      return
     }
 
     const capitalizeName = (name: string) => {
       return name
         .split(' ')
         .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
-        .join(' ');
-    };
+        .join(' ')
+    }
 
     const newMovie: MovieInput = {
       title: manualMovie.title.trim(),
@@ -73,17 +80,18 @@ export default function MoviesList() {
         .map(s => s.trim())
         .filter(s => s.length > 0)
         .map(capitalizeName),
-    };
+    }
 
-    void addMovie(newMovie).unwrap()
-      .then(() => refetch())
-      .then(() => {
-        setManualMovie({ title: '', year: '', format: '', actors: '' })
-        setShowManualForm(false)
-      })
-      .catch((error: unknown) => {
-        console.error('Failed to add movie:', error)
-      })
+    try {
+      await addMovie(newMovie).unwrap()
+      await refetch()
+      setManualMovie({ title: '', year: '', format: '', actors: '' })
+      setShowManualForm(false)
+      setSuccessMessage('Movie added successfully')
+    } catch (error) {
+      console.error('Failed to add movie:', error)
+      setErrorMessage('Failed to add movie')
+    }
   }
 
   return (
@@ -95,34 +103,64 @@ export default function MoviesList() {
         onActorChange={setActorFilter}
       />
 
-      <h1>Movies collection</h1>
-      <Button
-        variant="outlined"
-        sx={{ mb: 2 }}
-        onClick={() => { setSortAsc((prev) => !prev); }}
-      >
-        Sort by title: {sortAsc ? 'A → Z' : 'Z → A'}
-      </Button>
-      <Button
-        variant="outlined"
-        onClick={() => { setShowManualForm((prev) => !prev); }}
-        sx={{ mb: 2 }}
-      >
-        {showManualForm ? 'Cancel' : 'Create your own movie manually'}
-      </Button>
+      <h1 style={{textAlign: 'center'}}>Movies collection</h1>
+
+      <Box sx={{ 
+          width: '100%', 
+          display: 'flex', 
+          alignItems: 'center',
+          justifyContent: 'space-around'
+        }}>
+        <Button
+          variant="outlined"
+          sx={{ mb: 2 }}
+          onClick={() => { setSortAsc((prev) => !prev) }}
+        >
+          Sort by title: {sortAsc ? 'A → Z' : 'Z → A'}
+        </Button>
+        <Button
+          variant="outlined"
+          onClick={() => { setShowManualForm((prev) => !prev) }}
+          sx={{ mb: 2 }}
+        >
+          {showManualForm ? 'Cancel' : 'Add movie manually'}
+        </Button>
+        <ImportMovies 
+          onSuccess={async () => {
+            setSuccessMessage('Movies imported successfully')
+            await refetch()
+          }}
+          onError={async () => {
+            setErrorMessage('The file is empty')
+            await refetch()
+          }}
+        />
+      </Box>
 
       {showManualForm && (
         <ManualMovieForm
           manualMovie={manualMovie}
           setManualMovie={setManualMovie}
-          onSubmit={() => { handleAddManualMovie(); }}
+          onSubmit={async () => {
+            await handleAddManualMovie()
+          }}
+          onSuccess={async () => {
+            setSuccessMessage('Movie added successfully')
+            await refetch()
+          }}
+          onError={async () => {
+            setErrorMessage('Failed to add movie')
+            await refetch()
+          }}
         />
       )}
       {!movies || movies.length === 0 ? (
         <Box textAlign="center">
           <Typography>The list is empty.</Typography>
           <Typography>Add movie manually</Typography>
-          <ImportMovies onSuccess={refetch} />
+          <Typography variant="body1" gutterBottom>
+            Or upload a text file with your movie collection
+          </Typography>
         </Box>
       ) : visibleMovies.length === 0 ? (
         <Typography>No movies found for your search</Typography>
@@ -133,33 +171,25 @@ export default function MoviesList() {
               key={movie.id}
               expanded={expandedId === movie.id}
               onChange={(_, isExpanded) => {
-                setExpandedId(isExpanded ? movie.id : null);
-                if (isExpanded) { fetchMovie(Number(movie.id)).catch(() => { console.error('Failed to fetch movie details'); }); }
+                setExpandedId(isExpanded ? movie.id : null)
+                if (isExpanded) { 
+                  fetchMovie(Number(movie.id))
+                  .catch(() => { console.error('Failed to fetch movie details') })
+                }
               }}
             >
               <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
                 <AccordionSummary
+                  sx={{ flexGrow: 1 }}
+                  id={`panel-${movie.id}-header`}
                   expandIcon={<ArrowDropDownIcon />}
                   aria-controls={`panel-${movie.id}-content`}
-                  id={`panel-${movie.id}-header`}
-                  sx={{ flexGrow: 1 }}
                 >
                   <Typography component="span">
                     {movie.title}
                   </Typography>
                 </AccordionSummary>
-
-                <IconButton
-                  aria-label="delete"
-                  onClick={() => {
-                    deleteMovie(movie.id).unwrap()
-                      .then(() => refetch())
-                      .catch((err: unknown) => { console.error('Failed to delete movie:', err); });
-                  }}
-                  sx={{ mr: 1 }}
-                >
-                  <DeleteIcon />
-                </IconButton>
+                <DeleteMovieDialog movieId={movie.id} onSuccess={handleDeleteSuccess}/>
               </Box>
               <AccordionDetails>
                 {isFetching ? (
@@ -183,6 +213,37 @@ export default function MoviesList() {
           ))}
         </List>
       )}
+      <Snackbar
+        open={!!successMessage}
+        autoHideDuration={6000}
+        onClose={() => {setSuccessMessage(null)}}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert 
+          sx={{ width: '100%' }}
+          severity="success" 
+          variant="filled"
+          onClose={() => {setSuccessMessage(null)}} 
+        >
+          {successMessage}
+        </Alert>
+        
+      </Snackbar>
+      <Snackbar
+        open={!!errorMessage}
+        autoHideDuration={6000}
+        onClose={() => {setErrorMessage(null)}}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert
+          sx={{ width: '100%' }}
+          severity="error"
+          variant="filled"
+          onClose={() => {setErrorMessage(null)}}
+        >
+          {errorMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   )
 }

@@ -8,4 +8,4 @@ type AppConfig = {
  * At runtime the server injects window.__APP_CONFIG__
  * (see entrypoint.sh below).  We cast to the shape we expect.
  */
-export const CONFIG = (window as unknown as { __APP_CONFIG__: AppConfig }).__APP_CONFIG__; 
+export const CONFIG = (window as unknown as { __APP_CONFIG__: AppConfig }).__APP_CONFIG__ || { API_URL: 'http://192.168.1.219:8000/api/v1'}; 
