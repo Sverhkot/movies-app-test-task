@@ -16,15 +16,13 @@ import {
 } from '@mui/material'
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown'
 
-import type { MovieInput } from './apiSlice'
 import ImportMovies from './ImportMovies'
 import ManualMovieForm from './ManualMovieForm'
 import DeleteMovieDialog from './DeleteMovieDialog'
 import MovieSearchFilters from './MovieSearchFilters'
-import { useGetMoviesQuery, useAddMovieMutation, useLazyGetMovieQuery } from './apiSlice'
+import { useGetMoviesQuery, useLazyGetMovieQuery } from './apiSlice'
 
 export default function MoviesList() {
-  const [addMovie] = useAddMovieMutation()
   const [sortAsc, setSortAsc] = useState(true)
   const [titleFilter, setTitleFilter] = useState('')
   const [actorFilter, setActorFilter] = useState('')
@@ -33,12 +31,7 @@ export default function MoviesList() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [expandedId, setExpandedId] = useState<string | number | null>(null)
   const [fetchMovie, { data: selectedMovie, isFetching }] = useLazyGetMovieQuery()
-  const [manualMovie, setManualMovie] = useState({
-    title: '',
-    year: '',
-    format: '',
-    actors: ''
-  })
+
   const { data: movies, error, refetch } = useGetMoviesQuery({
     title: titleFilter,
     actor: actorFilter,
@@ -47,7 +40,9 @@ export default function MoviesList() {
     limit: 100
   })
 
-  if (error) return <p style={{ color: 'red' }}>An error occurred :|</p>
+  if (error) {
+    return <Typography color="error">An error occurred :|</Typography>
+  }
 
   const visibleMovies = [...(movies ?? [])].sort((a, b) =>
     sortAsc ? a.title.localeCompare(b.title) : b.title.localeCompare(a.title)
@@ -56,42 +51,6 @@ export default function MoviesList() {
   const handleDeleteSuccess = async () => {
     setSuccessMessage('Movie deleted successfully')
     await refetch()
-  }
-
-  const handleAddManualMovie = async () => {
-    if (!manualMovie.title || !manualMovie.year || !manualMovie.format) {
-      console.error('Please fill in all required fields')
-      return
-    }
-
-    const capitalizeName = (name: string) => {
-      return name
-        .split(' ')
-        .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
-        .join(' ')
-    }
-
-    const newMovie: MovieInput = {
-      title: manualMovie.title.trim(),
-      year: Number(manualMovie.year),
-      format: manualMovie.format as 'VHS' | 'DVD' | 'Blu-Ray',
-      actors: manualMovie.actors
-        .split(',')
-        .map(s => s.trim())
-        .filter(s => s.length > 0)
-        .map(capitalizeName),
-    }
-
-    try {
-      await addMovie(newMovie).unwrap()
-      await refetch()
-      setManualMovie({ title: '', year: '', format: '', actors: '' })
-      setShowManualForm(false)
-      setSuccessMessage('Movie added successfully')
-    } catch (error) {
-      console.error('Failed to add movie:', error)
-      setErrorMessage('Failed to add movie')
-    }
   }
 
   return (
@@ -103,29 +62,32 @@ export default function MoviesList() {
         onActorChange={setActorFilter}
       />
 
-      <h1 style={{textAlign: 'center'}}>Movies collection</h1>
+      <Typography variant="h4" textAlign="center" gutterBottom>
+        Movies collection
+      </Typography>
 
-      <Box sx={{ 
-          width: '100%', 
-          display: 'flex', 
+      <Box
+        sx={{
+          width: '100%',
+          display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-around'
-        }}>
+          justifyContent: 'space-around',
+          marginBottom: '20px'
+        }}
+      >
         <Button
           variant="outlined"
-          sx={{ mb: 2 }}
-          onClick={() => { setSortAsc((prev) => !prev) }}
+          onClick={() => {setSortAsc(prev => !prev)}}
         >
           Sort by title: {sortAsc ? 'A → Z' : 'Z → A'}
         </Button>
         <Button
           variant="outlined"
-          onClick={() => { setShowManualForm((prev) => !prev) }}
-          sx={{ mb: 2 }}
+          onClick={() => {setShowManualForm(prev => !prev)}}
         >
           {showManualForm ? 'Cancel' : 'Add movie manually'}
         </Button>
-        <ImportMovies 
+        <ImportMovies
           onSuccess={async () => {
             setSuccessMessage('Movies imported successfully')
             await refetch()
@@ -139,23 +101,19 @@ export default function MoviesList() {
 
       {showManualForm && (
         <ManualMovieForm
-          manualMovie={manualMovie}
-          setManualMovie={setManualMovie}
-          onSubmit={async () => {
-            await handleAddManualMovie()
-          }}
           onSuccess={async () => {
             setSuccessMessage('Movie added successfully')
             await refetch()
+            setShowManualForm(false)
           }}
-          onError={async () => {
+          onError={() => {
             setErrorMessage('Failed to add movie')
-            await refetch()
           }}
         />
       )}
+
       {!movies || movies.length === 0 ? (
-        <Box textAlign="center">
+        <Box textAlign="center" mt={3}>
           <Typography>The list is empty.</Typography>
           <Typography>Add movie manually</Typography>
           <Typography variant="body1" gutterBottom>
@@ -163,7 +121,7 @@ export default function MoviesList() {
           </Typography>
         </Box>
       ) : visibleMovies.length === 0 ? (
-        <Typography>No movies found for your search</Typography>
+        <Typography mt={3}>No movies found for your search</Typography>
       ) : (
         <List>
           {visibleMovies.map((movie) => (
@@ -172,24 +130,23 @@ export default function MoviesList() {
               expanded={expandedId === movie.id}
               onChange={(_, isExpanded) => {
                 setExpandedId(isExpanded ? movie.id : null)
-                if (isExpanded) { 
-                  fetchMovie(Number(movie.id))
-                  .catch(() => { console.error('Failed to fetch movie details') })
+                if (isExpanded) {
+                  fetchMovie(Number(movie.id)).catch(() => {
+                    console.error('Failed to fetch movie details')
+                  })
                 }
               }}
             >
               <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
                 <AccordionSummary
                   sx={{ flexGrow: 1 }}
-                  id={`panel-${movie.id}-header`}
                   expandIcon={<ArrowDropDownIcon />}
                   aria-controls={`panel-${movie.id}-content`}
+                  id={`panel-${movie.id}-header`}
                 >
-                  <Typography component="span">
-                    {movie.title}
-                  </Typography>
+                  <Typography>{movie.title}</Typography>
                 </AccordionSummary>
-                <DeleteMovieDialog movieId={movie.id} onSuccess={handleDeleteSuccess}/>
+                <DeleteMovieDialog movieId={movie.id} onSuccess={handleDeleteSuccess} />
               </Box>
               <AccordionDetails>
                 {isFetching ? (
@@ -202,7 +159,8 @@ export default function MoviesList() {
                     <ListItem>Format: {movie.format}</ListItem>
                     <Divider variant="middle" component="li" />
                     <ListItem>
-                      Actors: {selectedMovie.actors.length > 0
+                      Actors:{' '}
+                      {selectedMovie.actors.length > 0
                         ? selectedMovie.actors.map(actor => actor.name).join(', ')
                         : 'N/A'}
                     </ListItem>
@@ -213,22 +171,23 @@ export default function MoviesList() {
           ))}
         </List>
       )}
+
       <Snackbar
         open={!!successMessage}
         autoHideDuration={6000}
         onClose={() => {setSuccessMessage(null)}}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       >
-        <Alert 
+        <Alert
           sx={{ width: '100%' }}
-          severity="success" 
+          severity="success"
           variant="filled"
-          onClose={() => {setSuccessMessage(null)}} 
+          onClose={() => {setSuccessMessage(null)}}
         >
           {successMessage}
         </Alert>
-        
       </Snackbar>
+
       <Snackbar
         open={!!errorMessage}
         autoHideDuration={6000}

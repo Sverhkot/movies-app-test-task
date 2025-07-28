@@ -19,7 +19,6 @@ type DeleteMovieDialogProps = {
 export default function AlertDialog({movieId, onSuccess}: DeleteMovieDialogProps) {
   const [open, setOpen] = useState(false)
 	const [deleteMovie] = useDeleteMovieMutation()
-	// const { refetch } = useGetMoviesQuery({})
 
   const handleClickOpen = () => {
     setOpen(true)
@@ -37,19 +36,6 @@ export default function AlertDialog({movieId, onSuccess}: DeleteMovieDialogProps
 		}
 		handleClose()
 	}
-	// const handleDelete = () => {
-	// 	deleteMovie(movieId)
-	// 	.unwrap()
-	// 	.then(() => {
-	// 		// eslint-disable-next-line @typescript-eslint/no-floating-promises
-	// 		refetch()	
-	// 	})
-	// 	.catch((err: unknown) => {
-	// 		console.error('Failed to delete movie:', err)
-	// 	})
-
-	// 	handleClose()
-  // }
 
   return (
     <React.Fragment>

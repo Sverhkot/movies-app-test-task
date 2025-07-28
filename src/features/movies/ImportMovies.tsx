@@ -29,11 +29,11 @@ export default function ImportMovies({ onSuccess, onError }: ImportMoviesProps) 
 
   const handleFileImport = (e: ChangeEvent<HTMLInputElement>) => {
   const file = e.target.files?.[0]
+  e.target.value = ''
   setErrorMessage('')
 
   if (!file) return
 
-  
   const formData = new FormData()
   formData.append('movies', file)
   
@@ -45,18 +45,17 @@ export default function ImportMovies({ onSuccess, onError }: ImportMoviesProps) 
       return
     }
     void onSuccess?.()
-    })
-    .catch((err: unknown) => {
-      console.error('Failed to import file:', err)
-    })
+  })
+  .catch((err: unknown) => {
+    console.error('Failed to import file:', err)
+  })
 }
 
   return (
     <>
-    <Box textAlign="center" mt={2} mb={4}>
+    <Box textAlign="center">
         <Button
           component="label"
-          role={undefined}
           variant="contained"
           tabIndex={-1}
           startIcon={<CloudUploadIcon />}

@@ -4,12 +4,21 @@ export const validateTitle = (
   value: string,
   movies?: Pick<Movie, 'title'>[]
 ): string => {
+  const trimmedValue = value.trim()
+
+  if (trimmedValue.length === 0) {
+    return 'Title field cannot be empty or only spaces'
+  }
 
   const isDuplicate = movies?.some(
-    movie => movie.title.trim().toLowerCase() === value.trim().toLowerCase()
+    movie => movie.title.trim().toLowerCase() === trimmedValue.toLowerCase()
   )
+  
+  if (isDuplicate) {
+    return 'Movie with this title already exists'
+  }
 
-  return isDuplicate ? 'Movie with this title already exists' : ''
+  return ''
 }
 
 export const validateYear = (value: string): string => {
