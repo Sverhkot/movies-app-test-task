@@ -1,5 +1,5 @@
 import type React from 'react'
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 
 import { 
   Box,
@@ -11,6 +11,11 @@ import {
   FormHelperText
 } from '@mui/material'
 
+import {
+  validateTitle,
+  validateYear,
+  validateActors
+} from './validation/manualMovieValidation'
 import { useGetMoviesQuery } from './apiSlice'
 
 type ManualMovieFormProps = {
@@ -40,78 +45,58 @@ export default function ManualMovieForm({
 }: ManualMovieFormProps) {
 
   const [errors, setErrors] = useState<Record<string, string>>({})
-
-  const handleChange = (field: string) => (
-      e: React.ChangeEvent<HTMLInputElement>
-    ) => {
-      const value = e.target.value
-
-      setManualMovie(prev => ({ ...prev, [field]: value }))
-      setErrors(prev => ({ ...prev, [field]: '' }))
-
-    if (field === 'title') {
-      const isDuplicate = movies?.some(
-        movie => movie.title.trim().toLowerCase() === value.trim().toLowerCase()
-      )
-      if (isDuplicate) {
-        setErrors(prev => ({ ...prev, title: 'Movie with this title already exists' }))
-      }
-    }
-
-    if (field === 'year') {
-      const numericValue = Number(value)
-      if (
-        value !== '' &&
-        (isNaN(numericValue) || numericValue < 1850 || numericValue > 2021)
-      ) {
-        setErrors(prev => ({
-          ...prev,
-          year: 'Year must be between 1850 and 2021'
-        }))
-      }
-    }
-
-   if (field === 'actors') {
-    const trimmedValue = value.trim()
-
-    if (trimmedValue === '') {
-      setErrors(prev => ({
-        ...prev,
-        actors: 'Actors field cannot be empty or only spaces',
-      }))
-      return
-    }
-
-
-    const containsLetter = /[a-zA-Zа-яА-ЯёЁ]/.test(trimmedValue)
-    if (!containsLetter) {
-      setErrors(prev => ({
-        ...prev,
-        actors: 'Actors field must contain at least one letter',
-      }))
-      return
-    }
-
-    const hasInvalidCharacters = /[^a-zA-Zа-яА-ЯёЁ\s,.-]/.test(value)
-    if (hasInvalidCharacters) {
-      setErrors(prev => ({
-        ...prev,
-        actors: 'Only letters, commas, dots, spaces and hyphens are allowed',
-      }))
-      return
-    }
-  }
-  }
-
   const { data: movies } = useGetMoviesQuery({})
 
-  const handleSubmit = async () => {
+  const handleTitleBlur = useCallback((e: React.FocusEvent<HTMLInputElement>) => {
+    const title = e.target.value;
+    const error = validateTitle(title, movies);
+    if (error) {
+        setErrors(prev => ({ ...prev, title: error }));
+    }
+  }, [movies]);
+  
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+      const field = e.target.name
+      const value = e.target.value
+
+      setManualMovie(prev => ({ ...prev, [field]: value }));
+
+      setErrors(prev => ({ ...prev, [field]: '' }));
+
+      let error = '';
+      switch (field) {
+        case 'title':
+          error = validateTitle(value, movies);
+          break;
+        case 'year':
+          error = validateYear(value);
+          break;
+        case 'actors':
+          error = validateActors(value); 
+          break;
+      }
+
+      if (error) {
+        setErrors(prev => ({ ...prev, [field]: error }));
+      }
+  }, [movies, setManualMovie])
+
+  const handleSubmit = useCallback(async () => {
     const newErrors: Record<string, string> = {}
 
     if (!manualMovie.title) newErrors.title = 'Title is required'
-    if (!manualMovie.year) newErrors.year = 'Year is required'
+    if (!manualMovie.year) {
+      newErrors.year = 'Year is required'
+    } else {
+      const numericYear = Number(manualMovie.year)
+      if (isNaN(numericYear) || numericYear < 1900 || numericYear > 2021) {
+        newErrors.year = 'Year must be between 1900 and 2021'
+      }
+    }
     if (!manualMovie.format) newErrors.format = 'Format is required'
-    if (!manualMovie.actors) newErrors.actors = 'Enter at least one actor'
+    if (!manualMovie.actors.trim()) {
+      newErrors.actors = 'Enter at least one actor'
+    }
 
     const isDuplicate = movies?.some(
       (movie) => movie.title.trim().toLowerCase() === manualMovie.title.trim().toLowerCase()
@@ -126,11 +111,6 @@ export default function ManualMovieForm({
       return
     }
 
-    if (!manualMovie.actors.trim()) {
-      newErrors.actors = 'Please enter at least one actor'
-    }
-
-    // onSubmit()
     try {
       await onSubmit()
       await onSuccess?.()
@@ -138,14 +118,16 @@ export default function ManualMovieForm({
       console.error('Error during submit:', e)
       await onError?.()
     }
-  }
+  }, [manualMovie, movies, onSubmit, onSuccess, onError])
   
   return (
     <Box display="flex" flexDirection="column" gap={2} mb={3}>
       <TextField
+        name='title'
         label="Title"
         value={manualMovie.title}
-        onChange={handleChange('title')}
+        onChange={handleChange}
+        onBlur={handleTitleBlur}
         fullWidth
         required
         error={!!errors.title}
@@ -154,13 +136,14 @@ export default function ManualMovieForm({
       <TextField
         type='number'
         label="Year"
+        name='year'
         value={manualMovie.year}
-        onChange={handleChange('year')}
+        onChange={handleChange}
         fullWidth
         required
         error={!!errors.year}
         helperText={errors.year}
-        slotProps={{ htmlInput: { min: 1850, max: 2021 }}}
+        slotProps={{ htmlInput: { min: 1900, max: 2021 }}}
         onKeyDown={(e) => {
           if (['e', 'E', '+', '-', '.'].includes(e.key)) {
             e.preventDefault()
@@ -187,6 +170,7 @@ export default function ManualMovieForm({
       </FormControl>
       <TextField
         label="Actors (comma separated)"
+        name='actors'
         value={manualMovie.actors}
         onChange={(e) => {
           const value = e.target.value.replace(/[0-9]/g, '')

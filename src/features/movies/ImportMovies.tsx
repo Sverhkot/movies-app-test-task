@@ -61,11 +61,10 @@ export default function ImportMovies({ onSuccess, onError }: ImportMoviesProps) 
           tabIndex={-1}
           startIcon={<CloudUploadIcon />}
         >
-          Upload files
+          Upload file
           <VisuallyHiddenInput
             type="file"
             onChange={handleFileImport}
-            multiple
           />
         </Button>
       </Box>
