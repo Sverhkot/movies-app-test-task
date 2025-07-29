@@ -66,8 +66,8 @@ export const moviesApi = createApi({
           limit,
         }
 
-        if (title) params.title = title
-        if (actor) params.actor = actor
+        if (title && title.length > 1) params.title = title
+        if (actor && actor.length > 1) params.actor = actor
 
         return {
           url: 'movies',

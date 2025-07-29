@@ -33,6 +33,7 @@ export default function MovieSearchFilters({
           label="Title"
           value={titleFilter}
           onChange={(e) => { onTitleChange(e.target.value) }}
+          helperText={titleFilter.length === 1 && 'Enter at least 2 characters'}
         />
         <TextField
           fullWidth
@@ -40,6 +41,7 @@ export default function MovieSearchFilters({
           label="Actor"
           value={actorFilter}
           onChange={handleActorChange}
+          helperText={actorFilter.length === 1 && 'Enter at least 2 characters'}
         />
       </Box>
     </>
