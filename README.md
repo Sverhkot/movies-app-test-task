@@ -1,4 +1,4 @@
-# Movies Test Task App
+# Movies App
 
 A modern React application for managing your movie collection. Built with Vite, Redux Toolkit, TypeScript, and Material-UI.
 
